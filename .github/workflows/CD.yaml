@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v1
@@ -74,7 +74,7 @@ jobs:
             type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3.1.1
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: true
@@ -88,13 +88,22 @@ jobs:
       #          renderEngine: 'kustomize'
       #          kustomizationPath: 'kustomize/overlays/alpha'
       #        id: bake-alpha
+
+      #   - uses: azure/login@v1
+      #     with:
+      #          creds: '${{ secrets.AKS_ALPHA_FINT_GITHUB }}'
+      #
+      #   - uses: azure/use-kubelogin@v1.1
+      #     with:
+      #       kubelogin-version: 'v0.0.26'
       #
       #      - name: Set the target Alpha cluster.
-      #        uses: azure/aks-set-context@v1
+      #        uses: azure/aks-set-context@v3
       #        with:
-      #          creds: '${{ secrets.AKS_ALPHA_FINT_GITHUB }}'
       #          cluster-name: ${{ env.ALPHA_CLUSTER_NAME }}
       #          resource-group: ${{ env.ALPHA_CLUSTER_RESOURCE_GROUP }}
+      #          admin: 'true'
+      #          use-kubelogin: 'true'
       #
       #      - name: Deploy to Alpha
       #        uses: azure/k8s-deploy@v4.4
@@ -107,17 +116,27 @@ jobs:
 
       ## Beta cluster ##
       - name: Bake beta manifests with Kustomize
-        uses: azure/k8s-bake@v2.2
+        uses: azure/k8s-bake@v2
         with:
           renderEngine: 'kustomize'
           kustomizationPath: 'kustomize/overlays/beta'
         id: bake-beta
-      - name: Set the target Beta cluster.
-        uses: azure/aks-set-context@v1
+
+      - uses: azure/login@v1
         with:
           creds: '${{ secrets.AKS_BETA_FINT_GITHUB }}'
+
+      - uses: azure/use-kubelogin@v1.1
+        with:
+          kubelogin-version: 'v0.0.26'
+
+      - name: Set the target Beta cluster.
+        uses: azure/aks-set-context@v3
+        with:
           cluster-name: ${{ env.BETA_CLUSTER_NAME }}
           resource-group: ${{ env.BETA_CLUSTER_RESOURCE_GROUP }}
+          admin: 'true'
+          use-kubelogin: 'true'
 
       - name: Deploy to Beta
         uses: azure/k8s-deploy@v4.4
